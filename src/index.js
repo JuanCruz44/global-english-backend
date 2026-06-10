@@ -4,17 +4,22 @@ require('dotenv').config();
 
 const sequelize = require('./config/database');
 
-const app = express();
+const authRoutes = require('./routes/auth');
+const alumnosRoutes = require('./routes/alumnos');
+const profesoresRoutes = require('./routes/profesores');
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Ruta de prueba
+app.use('/auth', authRoutes);
+app.use('/alumnos', alumnosRoutes);
+app.use('/profesores', profesoresRoutes);
+
 app.get('/', (req, res) => {
   res.json({ mensaje: 'Servidor de Global English funcionando' });
 });
 
-// Verificar conexión a la base de datos y levantar servidor
 sequelize.authenticate()
   .then(() => {
     console.log('Conexión a la base de datos exitosa');
