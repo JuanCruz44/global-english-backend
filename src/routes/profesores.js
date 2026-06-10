@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Profesor = require('../models/Profesor');
+const { Profesor } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 // GET /profesores

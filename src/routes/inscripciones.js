@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Inscripcion = require('../models/Inscripcion');
-const Alumno = require('../models/Alumno');
+const { Inscripcion, Alumno } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 router.post('/', verificarToken, soloSecretaria, async (req, res) => {

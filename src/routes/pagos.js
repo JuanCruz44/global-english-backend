@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Pago = require('../models/Pago');
-const Inscripcion = require('../models/Inscripcion');
-const Alumno = require('../models/Alumno');
+const { Pago, Inscripcion, Alumno } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 router.get('/deudores', verificarToken, soloSecretaria, async (req, res) => {

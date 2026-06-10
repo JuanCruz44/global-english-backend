@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Curso = require('../models/Curso');
-const Profesor = require('../models/Profesor');
-const Inscripcion = require('../models/Inscripcion');
-const Alumno = require('../models/Alumno');
+const { Curso, Profesor, Inscripcion, Alumno } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 router.get('/', verificarToken, async (req, res) => {

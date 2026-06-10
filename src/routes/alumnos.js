@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Alumno = require('../models/Alumno');
-const Inscripcion = require('../models/Inscripcion');
-const Curso = require('../models/Curso');
+const { Alumno, Inscripcion, Curso } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 const { Op } = require('sequelize');
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const Usuario = require('../models/Usuario');
+const { Usuario } = require('../models/index');
 require('dotenv').config();
 
 // POST /auth/login
