@@ -16,6 +16,10 @@ export default function Navbar() {
         {rol === 'secretaria' && <>
           <Link to="/alumnos" className="hover:underline">Alumnos</Link>
           <Link to="/cursos" className="hover:underline">Cursos</Link>
+          <Link to="/inscripciones" className="hover:underline">Inscripciones</Link>
+          <Link to="/pagos" className="hover:underline">Pagos</Link>
+          <Link to="/asistencias" className="hover:underline">Asistencias</Link>
+          <Link to="/reportes" className="hover:underline">Reportes</Link>
         </>}
       </div>
       <button onClick={cerrarSesion} className="bg-red-500 px-3 py-1 rounded hover:bg-red-600">
