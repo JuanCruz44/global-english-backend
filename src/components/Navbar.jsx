@@ -20,6 +20,9 @@ export default function Navbar() {
           <Link to="/pagos" className="hover:underline">Pagos</Link>
           <Link to="/asistencias" className="hover:underline">Asistencias</Link>
           <Link to="/reportes" className="hover:underline">Reportes</Link>
+          <Link to="/profesores/nuevo" className="hover:underline">Crear Profesor</Link>
+          <Link to="/inscribir" className="hover:underline">Inscribir Alumno</Link>
+          <Link to="/pagos" className="hover:underline">Pagos</Link>
         </>}
       </div>
       <button onClick={cerrarSesion} className="bg-red-500 px-3 py-1 rounded hover:bg-red-600">

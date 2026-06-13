@@ -9,6 +9,10 @@ import Inscripciones from './pages/Inscripciones';
 import Pagos from './pages/Pagos';
 import Asistencias from './pages/Asistencias';
 import Reportes from './pages/Reportes';
+import CrearProfesor from './pages/CrearProfesor';
+import Inscripcion from './pages/Inscripcion';
+import InscripcionPublica from './pages/InscripcionPublica';
+import Pagos from './pages/Pagos';
 
 function RutaProtegida({ children }) {
   const token = localStorage.getItem('token');
@@ -18,6 +22,8 @@ function RutaProtegida({ children }) {
 function App() {
   return (
     <BrowserRouter>
+    // Esta va ANTES de la ruta del login, fuera de RutaProtegida
+<Route path="/inscripcion" element={<InscripcionPublica />} />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/*" element={
@@ -33,6 +39,9 @@ function App() {
                 <Route path="/pagos" element={<Pagos />} />
                 <Route path="/asistencias" element={<Asistencias />} />
                 <Route path="/reportes" element={<Reportes />} />
+                <Route path="/profesores/nuevo" element={<CrearProfesor />} />
+                <Route path="/inscribir" element={<Inscripcion />} />
+                <Route path="/pagos" element={<Pagos />} />
               </Routes>
             </div>
           </RutaProtegida>
