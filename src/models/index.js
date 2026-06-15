@@ -5,6 +5,11 @@ const Inscripcion = require('./Inscripcion');
 const Pago = require('./Pago');
 const Asistencia = require('./Asistencia');
 const Usuario = require('./Usuario');
+const ListaAsistencia = require('./ListaAsistencia');
+
+// Curso tiene muchas Listas de Asistencia
+Curso.hasMany(ListaAsistencia, { foreignKey: 'id_curso' });
+ListaAsistencia.belongsTo(Curso, { foreignKey: 'id_curso' });
 
 // Profesor tiene muchos Cursos
 Profesor.hasMany(Curso, { foreignKey: 'id_profesor' });
@@ -26,4 +31,4 @@ Pago.belongsTo(Inscripcion, { foreignKey: 'id_inscripcion' });
 Inscripcion.hasMany(Asistencia, { foreignKey: 'id_inscripcion' });
 Asistencia.belongsTo(Inscripcion, { foreignKey: 'id_inscripcion' });
 
-module.exports = { Alumno, Curso, Profesor, Inscripcion, Pago, Asistencia, Usuario };
+module.exports = { Alumno, Curso, Profesor, Inscripcion, Pago, Asistencia, ListaAsistencia, Usuario };

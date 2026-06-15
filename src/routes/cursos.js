@@ -14,6 +14,19 @@ router.get('/', verificarToken, async (req, res) => {
   }
 });
 
+// GET /cursos/:id — obtener un curso específico con su profesor
+router.get('/:id', verificarToken, async (req, res) => {
+  try {
+    const curso = await Curso.findByPk(req.params.id, {
+      include: [{ model: Profesor, attributes: ['nombre', 'apellido', 'email', 'telefono'] }]
+    });
+    if (!curso) return res.status(404).json({ error: 'Curso no encontrado' });
+    res.json(curso);
+  } catch {
+    res.status(500).json({ error: 'Error al obtener curso' });
+  }
+});
+
 router.get('/:id/alumnos', verificarToken, async (req, res) => {
   try {
     const inscripciones = await Inscripcion.findAll({

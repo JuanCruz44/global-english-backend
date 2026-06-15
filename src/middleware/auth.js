@@ -20,5 +20,11 @@ const soloSecretaria = (req, res, next) => {
   }
   next();
 };
+const soloProfesor = (req, res, next) => {
+  if (req.usuario.rol !== 'profesor') {
+    return res.status(403).json({ error: 'Acceso denegado' });
+  }
+  next();
+};
 
-module.exports = { verificarToken, soloSecretaria };
+module.exports = { verificarToken, soloSecretaria, soloProfesor };
