@@ -4,12 +4,23 @@ const { Alumno, Inscripcion, Curso } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
-// GET /alumnos — listar todos
+// GET /alumnos — listar todos con su curso
 router.get('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
-    const alumnos = await Alumno.findAll();
-    res.json(alumnos);
-  } catch {
+    const alumnos = await Alumno.findAll({
+      include: [{
+        model: Inscripcion,
+        required: false,
+        include: [{ model: Curso, attributes: ['nombre'] }]
+      }]
+    });
+    const resultado = alumnos.map(a => ({
+      ...a.dataValues,
+      curso: a.Inscripcions?.[0]?.Curso?.nombre || 'Sin curso'
+    }));
+    res.json(resultado);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al obtener alumnos' });
   }
 });
@@ -49,7 +60,7 @@ router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
     const existe = await Alumno.findOne({ where: { dni: req.body.dni } });
     if (existe) return res.status(400).json({ error: 'Ya existe un alumno con ese DNI' });
-    const alumno = await Alumno.create({ ...req.body, fecha_registro: new Date() });
+    const alumno = await Alumno.create({ ...req.body, fecha_inscripcion: new Date() });
     res.status(201).json(alumno);
   } catch {
     res.status(500).json({ error: 'Error al crear alumno' });
