@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Alumno, Inscripcion, Curso } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
+const { obtenerDeudores } = require('../utils/morosidad');
 const { Op } = require('sequelize');
 
 // GET /alumnos — listar todos con su curso
@@ -25,7 +26,7 @@ router.get('/', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
-// GET /alumnos/buscar?q=texto — buscar por nombre o DNI
+// GET /alumnos/buscar?q=texto
 router.get('/buscar', verificarToken, soloSecretaria, async (req, res) => {
   const { q } = req.query;
   try {
@@ -36,9 +37,26 @@ router.get('/buscar', verificarToken, soloSecretaria, async (req, res) => {
           { apellido: { [Op.like]: `%${q}%` } },
           { dni: { [Op.like]: `%${q}%` } }
         ]
-      }
+      },
+      include: [{
+        model: Inscripcion, required: false,
+        include: [{ model: Curso, attributes: ['nombre'] }]
+      }]
     });
-    res.json(alumnos);
+
+    const deudores = await obtenerDeudores();
+
+    const resultado = alumnos.map(a => {
+      const insc = a.Inscripcions?.[0];
+      const deuda = deudores.find(d => d.id_alumno === a.id_alumno);
+      return {
+        ...a.dataValues,
+        curso: insc?.Curso?.nombre || 'Sin curso',
+        cuotas_adeudadas: deuda ? deuda.cantidad_cuotas : 0
+      };
+    });
+
+    res.json(resultado);
   } catch {
     res.status(500).json({ error: 'Error al buscar alumnos' });
   }

@@ -12,6 +12,7 @@ const cursosRoutes = require('./routes/cursos');
 const inscripcionesRoutes = require('./routes/inscripciones');
 const pagosRoutes = require('./routes/pagos');
 const asistenciasRoutes = require('./routes/asistencias');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/cursos', cursosRoutes);
 app.use('/inscripciones', inscripcionesRoutes);
 app.use('/pagos', pagosRoutes);
 app.use('/asistencias', asistenciasRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'Servidor de Global English funcionando' });
