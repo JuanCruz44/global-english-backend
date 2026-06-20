@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Inscripcion, Alumno, Curso } = require('../models/index');
+const { obtenerResumenPagos } = require('../utils/morosidad');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 router.post('/', verificarToken, soloSecretaria, async (req, res) => {
@@ -53,10 +54,17 @@ router.put('/cambiar-curso', verificarToken, soloSecretaria, async (req, res) =>
   try {
     const inscripcion = await Inscripcion.findOne({ where: { id_alumno } });
     if (!inscripcion) return res.status(404).json({ error: 'El alumno no tiene una inscripción activa' });
-    await inscripcion.update({
-      id_curso: id_curso_nuevo,
-      fecha_inscripcion: new Date().toISOString().split('T')[0]
-    });
+
+    // Regla de negocio: no se puede cambiar de curso si el alumno debe cuotas
+    const resumen = await obtenerResumenPagos(inscripcion.id_inscripcion);
+    if (resumen && !resumen.al_dia) {
+      return res.status(400).json({
+        error: `El alumno debe ${resumen.cuotas_adeudadas} cuota(s) por un total de $${resumen.total_deuda}. Debe estar al día para cambiar de curso.`
+      });
+    }
+
+    await inscripcion.update({ id_curso: id_curso_nuevo });
+
     res.json({ mensaje: 'Curso actualizado correctamente', inscripcion });
   } catch {
     res.status(500).json({ error: 'Error al cambiar de curso' });

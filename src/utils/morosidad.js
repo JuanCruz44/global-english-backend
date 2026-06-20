@@ -73,4 +73,39 @@ async function obtenerMesesAdeudados(id_inscripcion) {
   return mesesEsperados.filter(m => !mesesPagados.includes(m));
 }
 
-module.exports = { obtenerDeudores, obtenerMesesAdeudados };
+async function obtenerResumenPagos(id_inscripcion) {
+  const insc = await Inscripcion.findByPk(id_inscripcion, {
+    include: [{ model: Curso, attributes: ['cuota_mensual'] }]
+  });
+  if (!insc) return null;
+
+  const hoy = new Date();
+  const fechaInicio = new Date(insc.fecha_inscripcion);
+  const mesesEsperados = [];
+  const cursor = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), 1);
+
+  while (cursor <= new Date(hoy.getFullYear(), hoy.getMonth(), 1)) {
+    const mes = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    mesesEsperados.push(mes);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const pagosRegistrados = await Pago.findAll({
+    where: { id_inscripcion, estado: 'pagado' },
+    order: [['mes_correspondiente', 'ASC']]
+  });
+  const mesesPagados = pagosRegistrados.map(p => p.mes_correspondiente);
+  const mesesAdeudados = mesesEsperados.filter(m => !mesesPagados.includes(m));
+
+  return {
+    al_dia: mesesAdeudados.length === 0,
+    cuotas_pagadas: mesesPagados.length,
+    cuotas_adeudadas: mesesAdeudados.length,
+    meses_pagados: mesesPagados,
+    meses_adeudados: mesesAdeudados,
+    total_deuda: mesesAdeudados.length * insc.Curso.cuota_mensual,
+    cuota_mensual: insc.Curso.cuota_mensual
+  };
+}
+
+module.exports = { obtenerDeudores, obtenerMesesAdeudados, obtenerResumenPagos };
