@@ -79,31 +79,28 @@ async function obtenerResumenPagos(id_inscripcion) {
   });
   if (!insc) return null;
 
-  const hoy = new Date();
-  const fechaInicio = new Date(insc.fecha_inscripcion);
-  const mesesEsperados = [];
-  const cursor = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), 1);
-
-  while (cursor <= new Date(hoy.getFullYear(), hoy.getMonth(), 1)) {
-    const mes = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-    mesesEsperados.push(mes);
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-
+  const detalleImpagos = await obtenerMesesAdeudadosConPrecio(id_inscripcion);
   const pagosRegistrados = await Pago.findAll({
     where: { id_inscripcion, estado: 'pagado' },
     order: [['mes_correspondiente', 'ASC']]
   });
-  const mesesPagados = pagosRegistrados.map(p => p.mes_correspondiente);
-  const mesesAdeudados = mesesEsperados.filter(m => !mesesPagados.includes(m));
+
+  const totalDeuda = detalleImpagos.reduce((acc, m) => acc + m.monto, 0);
 
   return {
-    al_dia: mesesAdeudados.length === 0,
-    cuotas_pagadas: mesesPagados.length,
-    cuotas_adeudadas: mesesAdeudados.length,
-    meses_pagados: mesesPagados,
-    meses_adeudados: mesesAdeudados,
-    total_deuda: mesesAdeudados.length * insc.Curso.cuota_mensual,
+    al_dia: detalleImpagos.length === 0,
+    cuotas_pagadas: pagosRegistrados.length,
+    cuotas_adeudadas: detalleImpagos.length,
+    meses_pagados: pagosRegistrados.map(p => p.mes_correspondiente),
+    pagos_realizados: pagosRegistrados.map(p => ({
+      id_pago: p.id_pago,
+      mes: p.mes_correspondiente,
+      monto: p.monto,
+      fecha_pago: p.fecha_pago
+    })),
+    meses_adeudados: detalleImpagos.map(m => m.mes),
+    detalle_meses_adeudados: detalleImpagos,
+    total_deuda: totalDeuda,
     cuota_mensual: insc.Curso.cuota_mensual
   };
 }

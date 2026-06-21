@@ -7,7 +7,8 @@ const Pago = sequelize.define('Pago', {
   mes_correspondiente: { type: DataTypes.STRING(7), allowNull: false },
   monto: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   fecha_pago: { type: DataTypes.DATEONLY, allowNull: false },
-  estado: { type: DataTypes.ENUM('pagado', 'pendiente', 'vencido'), defaultValue: 'pendiente' }
+  estado: { type: DataTypes.ENUM('pagado', 'pendiente', 'vencido'), defaultValue: 'pendiente' },
+  pagado_por: { type: DataTypes.STRING(100), allowNull: true }
 }, { tableName: 'pagos', timestamps: false });
 
 module.exports = Pago;

@@ -101,4 +101,35 @@ router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
+// GET /pagos/comprobante/:id_pago — datos completos para el recibo
+router.get('/comprobante/:id_pago', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id_pago, {
+      include: [{
+        model: Inscripcion,
+        include: [
+          { model: Alumno, attributes: ['nombre', 'apellido', 'dni'] },
+          { model: Curso, attributes: ['nombre', 'nivel'] }
+        ]
+      }]
+    });
+    if (!pago) return res.status(404).json({ error: 'Pago no encontrado' });
+    res.json(pago);
+  } catch {
+    res.status(500).json({ error: 'Error al obtener el comprobante' });
+  }
+});
+
+// PUT /pagos/:id_pago/pagado-por — guardar quién realizó el pago
+router.put('/:id_pago/pagado-por', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id_pago);
+    if (!pago) return res.status(404).json({ error: 'Pago no encontrado' });
+    await pago.update({ pagado_por: req.body.pagado_por });
+    res.json(pago);
+  } catch {
+    res.status(500).json({ error: 'Error al guardar' });
+  }
+});
+
 module.exports = router;
