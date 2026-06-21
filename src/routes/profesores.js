@@ -35,4 +35,16 @@ router.put('/:id', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
+// DELETE /profesores/:id
+router.delete('/:id', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const profesor = await Profesor.findByPk(req.params.id);
+    if (!profesor) return res.status(404).json({ error: 'Profesor no encontrado' });
+    await profesor.destroy();
+    res.json({ message: 'Profesor eliminado correctamente' });
+  } catch {
+    res.status(500).json({ error: 'Error al eliminar profesor' });
+  }
+});
+
 module.exports = router;
