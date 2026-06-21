@@ -79,18 +79,19 @@ async function obtenerResumenPagos(id_inscripcion) {
   });
   if (!insc) return null;
 
-  const detalleImpagos = await obtenerMesesAdeudadosConPrecio(id_inscripcion);
+  const mesesImpagos = await obtenerMesesAdeudados(id_inscripcion);
   const pagosRegistrados = await Pago.findAll({
     where: { id_inscripcion, estado: 'pagado' },
     order: [['mes_correspondiente', 'ASC']]
   });
 
-  const totalDeuda = detalleImpagos.reduce((acc, m) => acc + m.monto, 0);
+  const cuotaMensual = Number(insc.Curso.cuota_mensual);
+  const totalDeuda = mesesImpagos.length * cuotaMensual;
 
   return {
-    al_dia: detalleImpagos.length === 0,
+    al_dia: mesesImpagos.length === 0,
     cuotas_pagadas: pagosRegistrados.length,
-    cuotas_adeudadas: detalleImpagos.length,
+    cuotas_adeudadas: mesesImpagos.length,
     meses_pagados: pagosRegistrados.map(p => p.mes_correspondiente),
     pagos_realizados: pagosRegistrados.map(p => ({
       id_pago: p.id_pago,
@@ -98,11 +99,18 @@ async function obtenerResumenPagos(id_inscripcion) {
       monto: p.monto,
       fecha_pago: p.fecha_pago
     })),
-    meses_adeudados: detalleImpagos.map(m => m.mes),
-    detalle_meses_adeudados: detalleImpagos,
+    meses_adeudados: mesesImpagos,
     total_deuda: totalDeuda,
     cuota_mensual: insc.Curso.cuota_mensual
   };
 }
 
-module.exports = { obtenerDeudores, obtenerMesesAdeudados, obtenerResumenPagos };
+// GET /pagos/meses-adeudados/:id_inscripcion usa esta función para saber qué monto cobrar
+async function obtenerCuotaDelMes(id_inscripcion) {
+  const insc = await Inscripcion.findByPk(id_inscripcion, {
+    include: [{ model: Curso, attributes: ['cuota_mensual'] }]
+  });
+  return insc ? insc.Curso.cuota_mensual : 0;
+}
+
+module.exports = { obtenerDeudores, obtenerMesesAdeudados, obtenerResumenPagos, obtenerCuotaDelMes };

@@ -94,7 +94,15 @@ router.get('/historial/:id_curso', verificarToken, soloSecretaria, async (req, r
 // POST /pagos — registrar un pago
 router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
-    const pago = await Pago.create({ ...req.body, fecha_pago: new Date(), estado: 'pagado' });
+    const { id_inscripcion, mes_correspondiente, monto, pagado_por } = req.body;
+    const pago = await Pago.create({
+      id_inscripcion,
+      mes_correspondiente,
+      monto,
+      pagado_por: pagado_por || null,
+      fecha_pago: new Date(),
+      estado: 'pagado'
+    });
     res.status(201).json(pago);
   } catch {
     res.status(500).json({ error: 'Error al registrar pago' });
