@@ -13,6 +13,21 @@ router.get('/', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
+// GET /profesores/:id — perfil del profesor con sus cursos
+router.get('/:id', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const { Curso } = require('../models/index');
+    const profesor = await Profesor.findByPk(req.params.id, {
+      include: [{ model: Curso, attributes: ['id_curso', 'nombre', 'nivel', 'horario', 'cuota_mensual'] }]
+    });
+    if (!profesor) return res.status(404).json({ error: 'Profesor no encontrado' });
+    res.json(profesor);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el profesor' });
+  }
+});
+
 // POST /profesores
 router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
