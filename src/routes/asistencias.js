@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
 const { Asistencia, Inscripcion, Alumno, ListaAsistencia, Curso } = require('../models/index');
 const { obtenerEstadisticasAsistencia, obtenerEstadisticasMensuales } = require('../utils/asistenciaStats');
 const { verificarToken, soloProfesor, soloSecretaria } = require('../middleware/auth');
@@ -17,8 +18,9 @@ router.get('/curso/:id_curso/fecha/:fecha', verificarToken, async (req, res) => 
 
     const lista = await ListaAsistencia.findOne({ where: { id_curso, fecha } });
 
+    // Solo alumnos que ya estaban inscriptos en el curso a la fecha de la planilla
     const inscripciones = await Inscripcion.findAll({
-      where: { id_curso },
+      where: { id_curso, fecha_inscripcion: { [Op.lte]: fecha } },
       include: [{ model: Alumno, attributes: ['nombre', 'apellido'] }]
     });
 

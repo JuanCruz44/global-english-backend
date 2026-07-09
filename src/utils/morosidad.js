@@ -97,7 +97,8 @@ async function obtenerResumenPagos(id_inscripcion) {
       id_pago: p.id_pago,
       mes: p.mes_correspondiente,
       monto: p.monto,
-      fecha_pago: p.fecha_pago
+      fecha_pago: p.fecha_pago,
+      pagado_por: p.pagado_por
     })),
     meses_adeudados: mesesImpagos,
     total_deuda: totalDeuda,

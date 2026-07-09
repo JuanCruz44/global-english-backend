@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Profesor } = require('../models/index');
+const bcrypt = require('bcryptjs');
+const { Profesor, Usuario, Curso } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
 // GET /profesores
@@ -31,9 +32,22 @@ router.get('/:id', verificarToken, soloSecretaria, async (req, res) => {
 // POST /profesores
 router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
-    const profesor = await Profesor.create(req.body);
+    const { usuario, contrasena, ...datosProfesor } = req.body;
+    const profesor = await Profesor.create(datosProfesor);
+
+    if (usuario && contrasena) {
+      const hash = await bcrypt.hash(contrasena, 10);
+      await Usuario.create({
+        usuario,
+        contrasena: hash,
+        rol: 'profesor',
+        id_profesor: profesor.id_profesor
+      });
+    }
+
     res.status(201).json(profesor);
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al crear profesor' });
   }
 });
@@ -55,9 +69,14 @@ router.delete('/:id', verificarToken, soloSecretaria, async (req, res) => {
   try {
     const profesor = await Profesor.findByPk(req.params.id);
     if (!profesor) return res.status(404).json({ error: 'Profesor no encontrado' });
+
+    await Curso.update({ id_profesor: null }, { where: { id_profesor: req.params.id } });
+    await Usuario.destroy({ where: { id_profesor: req.params.id } });
+
     await profesor.destroy();
     res.json({ message: 'Profesor eliminado correctamente' });
-  } catch {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Error al eliminar profesor' });
   }
 });

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Alumno, Inscripcion, Curso } = require('../models/index');
+const { Alumno, Inscripcion, Curso, Pago, Asistencia } = require('../models/index');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 const { obtenerDeudores } = require('../utils/morosidad');
 const { Op } = require('sequelize');
@@ -106,6 +106,27 @@ router.delete('/:id', verificarToken, soloSecretaria, async (req, res) => {
     res.json({ mensaje: 'Alumno dado de baja correctamente' });
   } catch {
     res.status(500).json({ error: 'Error al dar de baja' });
+  }
+});
+
+// DELETE /alumnos/:id/permanente — eliminar de la base de datos
+router.delete('/:id/permanente', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const alumno = await Alumno.findByPk(req.params.id);
+    if (!alumno) return res.status(404).json({ error: 'Alumno no encontrado' });
+
+    const inscripciones = await Inscripcion.findAll({ where: { id_alumno: req.params.id } });
+    for (const insc of inscripciones) {
+      await Pago.destroy({ where: { id_inscripcion: insc.id_inscripcion } });
+      await Asistencia.destroy({ where: { id_inscripcion: insc.id_inscripcion } });
+    }
+    await Inscripcion.destroy({ where: { id_alumno: req.params.id } });
+
+    await alumno.destroy();
+    res.json({ mensaje: 'Alumno eliminado permanentemente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al eliminar alumno' });
   }
 });
 

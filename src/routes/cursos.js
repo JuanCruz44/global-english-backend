@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Curso, Profesor, Inscripcion, Alumno } = require('../models/index');
+const { Curso, Profesor, Inscripcion, Alumno, Pago, Asistencia, ListaAsistencia } = require('../models/index');
 const { obtenerDeudores } = require('../utils/morosidad');
 const { verificarToken, soloSecretaria } = require('../middleware/auth');
 
@@ -83,6 +83,28 @@ router.put('/:id', verificarToken, soloSecretaria, async (req, res) => {
     res.json(curso);
   } catch {
     res.status(500).json({ error: 'Error al modificar curso' });
+  }
+});
+
+// DELETE /cursos/:id
+router.delete('/:id', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const curso = await Curso.findByPk(req.params.id);
+    if (!curso) return res.status(404).json({ error: 'Curso no encontrado' });
+
+    const inscripciones = await Inscripcion.findAll({ where: { id_curso: req.params.id } });
+    for (const insc of inscripciones) {
+      await Pago.destroy({ where: { id_inscripcion: insc.id_inscripcion } });
+      await Asistencia.destroy({ where: { id_inscripcion: insc.id_inscripcion } });
+    }
+    await Inscripcion.destroy({ where: { id_curso: req.params.id } });
+    await ListaAsistencia.destroy({ where: { id_curso: req.params.id } });
+
+    await curso.destroy();
+    res.json({ mensaje: 'Curso eliminado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al eliminar curso' });
   }
 });
 

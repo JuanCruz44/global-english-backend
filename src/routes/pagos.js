@@ -109,6 +109,33 @@ router.post('/', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
+// POST /pagos/lote — registrar varias cuotas de una sola vez
+router.post('/lote', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const { id_inscripcion, meses, monto, pagado_por } = req.body;
+    if (!id_inscripcion || !Array.isArray(meses) || meses.length === 0) {
+      return res.status(400).json({ error: 'Datos incompletos para registrar el pago' });
+    }
+    const fecha_pago = new Date();
+    const creados = [];
+    for (const mes of meses) {
+      const pago = await Pago.create({
+        id_inscripcion,
+        mes_correspondiente: mes,
+        monto,
+        pagado_por: pagado_por || null,
+        fecha_pago,
+        estado: 'pagado'
+      });
+      creados.push(pago);
+    }
+    res.status(201).json({ ids: creados.map(p => p.id_pago), pagos: creados });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al registrar los pagos' });
+  }
+});
+
 // GET /pagos/comprobante/:id_pago — datos completos para el recibo
 router.get('/comprobante/:id_pago', verificarToken, soloSecretaria, async (req, res) => {
   try {
@@ -137,6 +164,18 @@ router.put('/:id_pago/pagado-por', verificarToken, soloSecretaria, async (req, r
     res.json(pago);
   } catch {
     res.status(500).json({ error: 'Error al guardar' });
+  }
+});
+
+// DELETE /pagos/:id_pago — eliminar un pago mal registrado
+router.delete('/:id_pago', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const pago = await Pago.findByPk(req.params.id_pago);
+    if (!pago) return res.status(404).json({ error: 'Pago no encontrado' });
+    await pago.destroy();
+    res.json({ mensaje: 'Pago eliminado correctamente' });
+  } catch {
+    res.status(500).json({ error: 'Error al eliminar el pago' });
   }
 });
 
