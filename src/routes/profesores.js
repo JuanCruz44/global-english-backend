@@ -64,6 +64,26 @@ router.put('/:id', verificarToken, soloSecretaria, async (req, res) => {
   }
 });
 
+// PUT /profesores/:id/password — la secretaría restablece la contraseña del profesor
+router.put('/:id/password', verificarToken, soloSecretaria, async (req, res) => {
+  const { contrasena } = req.body;
+  if (!contrasena || contrasena.length < 4) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres' });
+  }
+  try {
+    const usuario = await Usuario.findOne({ where: { id_profesor: req.params.id } });
+    if (!usuario) {
+      return res.status(404).json({ error: 'Este profesor no tiene una cuenta de acceso asociada' });
+    }
+    const hash = await bcrypt.hash(contrasena, 10);
+    await usuario.update({ contrasena: hash });
+    res.json({ mensaje: 'Contraseña restablecida correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al restablecer la contraseña' });
+  }
+});
+
 // DELETE /profesores/:id
 router.delete('/:id', verificarToken, soloSecretaria, async (req, res) => {
   try {
