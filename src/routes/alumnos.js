@@ -5,10 +5,11 @@ const { verificarToken, soloSecretaria } = require('../middleware/auth');
 const { obtenerDeudores } = require('../utils/morosidad');
 const { Op } = require('sequelize');
 
-// GET /alumnos — listar todos con su curso
+// GET /alumnos — listar los activos con su curso
 router.get('/', verificarToken, soloSecretaria, async (req, res) => {
   try {
     const alumnos = await Alumno.findAll({
+      where: { estado: 'activo' },
       include: [{
         model: Inscripcion,
         required: false,
@@ -32,6 +33,7 @@ router.get('/buscar', verificarToken, soloSecretaria, async (req, res) => {
   try {
     const alumnos = await Alumno.findAll({
       where: {
+        estado: 'activo',
         [Op.or]: [
           { nombre: { [Op.like]: `%${q}%` } },
           { apellido: { [Op.like]: `%${q}%` } },
@@ -59,6 +61,58 @@ router.get('/buscar', verificarToken, soloSecretaria, async (req, res) => {
     res.json(resultado);
   } catch {
     res.status(500).json({ error: 'Error al buscar alumnos' });
+  }
+});
+
+// GET /alumnos/inactivos — listar los alumnos dados de baja
+router.get('/inactivos', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const alumnos = await Alumno.findAll({
+      where: { estado: 'inactivo' },
+      include: [{
+        model: Inscripcion,
+        required: false,
+        include: [{ model: Curso, attributes: ['nombre'] }]
+      }]
+    });
+    const resultado = alumnos.map(a => ({
+      ...a.dataValues,
+      curso: a.Inscripcions?.[0]?.Curso?.nombre || 'Sin curso'
+    }));
+    res.json(resultado);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener alumnos inactivos' });
+  }
+});
+
+// PUT /alumnos/:id/baja — dar de baja con un motivo
+router.put('/:id/baja', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const alumno = await Alumno.findByPk(req.params.id);
+    if (!alumno) return res.status(404).json({ error: 'Alumno no encontrado' });
+    await alumno.update({
+      estado: 'inactivo',
+      motivo_baja: req.body.motivo_baja || null,
+      fecha_baja: new Date()
+    });
+    res.json(alumno);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al dar de baja al alumno' });
+  }
+});
+
+// PUT /alumnos/:id/reactivar — volver a estado activo
+router.put('/:id/reactivar', verificarToken, soloSecretaria, async (req, res) => {
+  try {
+    const alumno = await Alumno.findByPk(req.params.id);
+    if (!alumno) return res.status(404).json({ error: 'Alumno no encontrado' });
+    await alumno.update({ estado: 'activo', motivo_baja: null, fecha_baja: null });
+    res.json(alumno);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al reactivar al alumno' });
   }
 });
 

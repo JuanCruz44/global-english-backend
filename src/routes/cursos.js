@@ -8,12 +8,15 @@ const { verificarToken, soloSecretaria } = require('../middleware/auth');
 router.get('/', verificarToken, async (req, res) => {
   try {
     const cursos = await Curso.findAll({
-      include: [{ model: Profesor, attributes: ['nombre', 'apellido'] }]
+      include: [{ model: Profesor, attributes: ['nombre', 'apellido'], where: { estado: 'activo' }, required: false }]
     });
     const deudores = await obtenerDeudores();
 
     const resultado = await Promise.all(cursos.map(async (c) => {
-      const cantidadAlumnos = await Inscripcion.count({ where: { id_curso: c.id_curso } });
+      const cantidadAlumnos = await Inscripcion.count({
+        where: { id_curso: c.id_curso },
+        include: [{ model: Alumno, where: { estado: 'activo' }, required: true, attributes: [] }]
+      });
       const deudoresCurso = deudores.filter(d => d.id_curso === c.id_curso);
       return {
         ...c.dataValues,
@@ -33,7 +36,7 @@ router.get('/', verificarToken, async (req, res) => {
 router.get('/:id', verificarToken, async (req, res) => {
   try {
     const curso = await Curso.findByPk(req.params.id, {
-      include: [{ model: Profesor, attributes: ['nombre', 'apellido', 'email', 'telefono'] }]
+      include: [{ model: Profesor, attributes: ['nombre', 'apellido', 'email', 'telefono'], where: { estado: 'activo' }, required: false }]
     });
     if (!curso) return res.status(404).json({ error: 'Curso no encontrado' });
     res.json(curso);
@@ -47,7 +50,7 @@ router.get('/:id/alumnos', verificarToken, async (req, res) => {
   try {
     const inscripciones = await Inscripcion.findAll({
       where: { id_curso: req.params.id },
-      include: [{ model: Alumno }]
+      include: [{ model: Alumno, where: { estado: 'activo' }, required: true }]
     });
     const deudores = await obtenerDeudores();
 

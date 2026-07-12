@@ -16,12 +16,17 @@ router.get('/resumen-mes', verificarToken, soloSecretaria, async (req, res) => {
       include: [{ model: Alumno, where: { estado: 'activo' } }]
     });
 
-    // Pagos registrados este mes
+    // Pagos registrados este mes (solo de alumnos activos, para que los números
+    // sean consistentes con el total de inscripciones activas)
     const pagosEsteMes = await Pago.findAll({
       where: { mes_correspondiente: mesActual, estado: 'pagado' },
       include: [{
         model: Inscripcion,
-        include: [{ model: Curso, attributes: ['cuota_mensual'] }]
+        required: true,
+        include: [
+          { model: Alumno, where: { estado: 'activo' }, required: true, attributes: [] },
+          { model: Curso, attributes: ['cuota_mensual'] }
+        ]
       }]
     });
 

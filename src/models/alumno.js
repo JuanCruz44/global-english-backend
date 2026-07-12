@@ -10,6 +10,8 @@ const Alumno = sequelize.define('Alumno', {
   telefono: { type: DataTypes.STRING(20) },
   email: { type: DataTypes.STRING(100) },
   estado: { type: DataTypes.ENUM('activo', 'inactivo'), defaultValue: 'activo' },
+  motivo_baja: { type: DataTypes.STRING(255), allowNull: true },
+  fecha_baja: { type: DataTypes.DATEONLY, allowNull: true },
   fecha_inscripcion: { type: DataTypes.DATEONLY, allowNull: false }
 }, { tableName: 'alumnos', timestamps: false });
 

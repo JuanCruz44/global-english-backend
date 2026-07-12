@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const { Asistencia, Inscripcion, Alumno, ListaAsistencia, Curso } = require('../models/index');
+const { Asistencia, Inscripcion, Alumno, ListaAsistencia, Curso, Profesor } = require('../models/index');
 const { obtenerEstadisticasAsistencia, obtenerEstadisticasMensuales } = require('../utils/asistenciaStats');
 const { verificarToken, soloProfesor, soloSecretaria } = require('../middleware/auth');
 
@@ -18,10 +18,19 @@ router.get('/curso/:id_curso/fecha/:fecha', verificarToken, async (req, res) => 
 
     const lista = await ListaAsistencia.findOne({ where: { id_curso, fecha } });
 
+    // En una lista abierta (que el profesor está tomando) se muestran solo los
+    // alumnos activos. En una lista ya cerrada se conserva el registro histórico.
+    const soloActivos = !(lista && lista.cerrada);
+    const filtroAlumno = { model: Alumno, attributes: ['nombre', 'apellido'] };
+    if (soloActivos) {
+      filtroAlumno.where = { estado: 'activo' };
+      filtroAlumno.required = true;
+    }
+
     // Solo alumnos que ya estaban inscriptos en el curso a la fecha de la planilla
     const inscripciones = await Inscripcion.findAll({
       where: { id_curso, fecha_inscripcion: { [Op.lte]: fecha } },
-      include: [{ model: Alumno, attributes: ['nombre', 'apellido'] }]
+      include: [filtroAlumno]
     });
 
     const detalle = await Promise.all(inscripciones.map(async (i) => {
@@ -51,6 +60,11 @@ router.post('/', verificarToken, soloProfesor, async (req, res) => {
       return res.status(403).json({ error: 'No tenés acceso a este curso' });
     }
 
+    const profesor = await Profesor.findByPk(req.usuario.id_profesor);
+    if (!profesor || profesor.estado !== 'activo') {
+      return res.status(403).json({ error: 'Tu cuenta está inactiva' });
+    }
+
     const lista = await ListaAsistencia.findOne({ where: { id_curso, fecha } });
     if (lista && lista.cerrada) {
       return res.status(400).json({ error: 'La lista de asistencia ya fue cerrada' });
@@ -74,6 +88,11 @@ router.post('/cerrar', verificarToken, soloProfesor, async (req, res) => {
     const curso = await Curso.findByPk(id_curso);
     if (!curso || curso.id_profesor != req.usuario.id_profesor) {
       return res.status(403).json({ error: 'No tenés acceso a este curso' });
+    }
+
+    const profesor = await Profesor.findByPk(req.usuario.id_profesor);
+    if (!profesor || profesor.estado !== 'activo') {
+      return res.status(403).json({ error: 'Tu cuenta está inactiva' });
     }
 
     const [lista, creada] = await ListaAsistencia.findOrCreate({

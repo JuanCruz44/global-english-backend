@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { Usuario } = require('../models/index');
+const { Usuario, Profesor } = require('../models/index');
 require('dotenv').config();
 
 // POST /auth/login
@@ -32,6 +32,14 @@ router.post('/login', async (req, res) => {
 
     if (!valido) {
       return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+
+    // Un profesor dado de baja no puede iniciar sesión
+    if (user.rol === 'profesor' && user.id_profesor) {
+      const profesor = await Profesor.findByPk(user.id_profesor);
+      if (!profesor || profesor.estado !== 'activo') {
+        return res.status(403).json({ error: 'Tu cuenta está inactiva. Contactá a la secretaría.' });
+      }
     }
 
     const token = jwt.sign(
